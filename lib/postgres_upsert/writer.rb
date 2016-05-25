@@ -5,6 +5,7 @@ module PostgresUpsert
       @klass = klass
       @options = options.reverse_merge({
         :delimiter => ",",
+        :quote => '"',
         :header => true,
         :unique_key => [primary_key],
         :update_only => false})
@@ -19,7 +20,7 @@ module PostgresUpsert
         raise "Either the :columns option or :header => true are required"
       end
 
-      csv_options = "DELIMITER '#{@options[:delimiter]}' CSV"
+      csv_options = "DELIMITER '#{@options[:delimiter]}' QUOTE '#{@options[:quote]}' CSV"
 
       copy_table = @temp_table_name
       columns_string = columns_string_for_copy
@@ -48,7 +49,7 @@ module PostgresUpsert
     def summarize_results
       result = PostgresUpsert::Result.new(@insert_result, @update_result, @copy_result)
       expected_rows = @options[:update_only] ? result.updated_rows : result.copied_rows
-      
+
       if result.changed_rows != expected_rows
         raise "#{expected_rows} rows were copied, but #{result.changed_rows} were upserted to destination table.  Check to make sure your key is unique."
       end
